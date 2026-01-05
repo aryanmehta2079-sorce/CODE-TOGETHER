@@ -15,7 +15,7 @@ const io = new Server(server, {
 /* ===============================
    Keep-alive
 ================================ */
-const url = "https://code-editor-93m0.onrender.com";
+const url = "https://code-together-b401.onrender.com";
 setInterval(() => axios.get(url).catch(() => {}), 30000);
 
 /* ===============================
