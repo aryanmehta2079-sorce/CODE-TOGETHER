@@ -1,0 +1,194 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 🔒 Prevent page-level scrollbars */
+body {
+  font-family: sans-serif;
+  background-color: aqua;
+  color: blueviolet;
+  overflow: hidden; /* ✅ IMPORTANT */
+}
+
+/* ===============================
+   JOIN SCREEN
+=============================== */
+.join-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #96ad4e 0%, #4aa59c 100%);
+
+  .join-form {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+
+    h1 {
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background-color: #357abd;
+      }
+    }
+  }
+}
+
+/* ===============================
+   MAIN EDITOR LAYOUT
+=============================== */
+.editor-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* ✅ KEY FIX (removes bottom/right scrollbar) */
+
+  .sidebar {
+    width: 250px; /* ✅ unchanged */
+    padding: 1.5rem;
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    flex-shrink: 0; /* ✅ prevents squeeze */
+
+    .room-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1rem;
+
+      h2 {
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+      }
+
+      .copy-btn {
+        padding: 0.5rem 1rem;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #2980b9;
+        }
+      }
+
+      .copy-success {
+        margin-top: 10px;
+        color: rgb(22, 219, 22);
+        font-size: 0.8rem;
+      }
+    }
+
+    h3 {
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+
+    ul {
+      list-style: none;
+
+      li {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        background: gray;
+        margin-top: 5px;
+        border-radius: 5px;
+      }
+    }
+
+    .typing-indicator {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: white;
+    }
+
+    .language-selector {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #34495e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .leave-btn {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #ab2a1c;
+      }
+    }
+  }
+
+  .editor-wrapper {
+    flex-grow: 1;
+    background-color: #dee28c;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* ✅ prevents internal overflow */
+  }
+}
+
+/* ===============================
+   BUTTONS & OUTPUT
+=============================== */
+.run-btn {
+  background-color: #12be46;
+  padding: 10px;
+}
+
+.output-console {
+  background-color: #dee28c;
+  width: 100%;
+  padding: 10px;
+  font-size: 20px;
+  flex: 1;
+  resize: none;
+  border: none;
+  overflow: auto; /* ✅ only output scrolls */
+}
+
+/* ===============================
+   SIDEBAR TOGGLE
+=============================== */
+.sidebar-hidden {
+  display: none;
+}
