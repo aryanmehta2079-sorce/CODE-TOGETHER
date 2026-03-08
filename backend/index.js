@@ -162,22 +162,7 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("receiveRoomMessage", {
       userName,
       message,
-      time: new Date().toLocaleTimeString(),
-    });
-  });
-  socket.on("sendPrivateMessage", ({ toUser, userName, message }) => {
-    const target = [...socketUser.entries()].find(
-      ([, v]) => v.normalizedName === toUser.toLowerCase(),
-    );
-
-    if (!target) return;
-
-    const targetSocket = target[0];
-
-    io.to(targetSocket).emit("receivePrivateMessage", {
-      from: userName,
-      message,
-      time: new Date().toLocaleTimeString(),
+      timestamp: Date.now(),
     });
   });
 
