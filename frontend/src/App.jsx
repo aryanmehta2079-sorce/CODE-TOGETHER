@@ -32,9 +32,7 @@ const App = () => {
 
   const [chatOpen, setChatOpen] = useState(false);
   const [roomMessages, setRoomMessages] = useState([]);
-  const [privateMessages, setPrivateMessages] = useState({});
   const [chatInput, setChatInput] = useState("");
-  const [activeChatUser, setActiveChatUser] = useState(null);
 
   const chatEndRef = useRef(null);
 
@@ -78,14 +76,13 @@ const App = () => {
     });
 
     socket.on("receiveRoomMessage", (msg) => {
-      setRoomMessages((prev) => [...prev, msg]);
-    });
-
-    socket.on("receivePrivateMessage", (msg) => {
-      setPrivateMessages((prev) => ({
+      setRoomMessages((prev) => [
         ...prev,
-        [msg.from]: [...(prev[msg.from] || []), msg],
-      }));
+        {
+          ...msg,
+          timestamp: msg.timestamp || Date.now(),
+        },
+      ]);
     });
 
     socket.on("languageUpdate", setLanguage);
@@ -260,17 +257,6 @@ const App = () => {
     setChatInput("");
   };
 
-  const sendPrivateMessage = () => {
-    if (!chatInput.trim()) return;
-
-    socket.emit("sendPrivateMessage", {
-      toUser: activeChatUser,
-      userName,
-      message: chatInput,
-    });
-
-    setChatInput("");
-  };
 
   const runCode = () => {
     if (!topic.trim()) {
@@ -545,7 +531,14 @@ const App = () => {
               >
                 <div className="chat-user">{m.userName}</div>
                 <div className="chat-bubble">{m.message}</div>
-                <div className="chat-time">{m.time}</div>
+                <div className="chat-time">
+                  {m.timestamp
+                    ? new Date(m.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""}
+                </div>
               </div>
             ))}
             <div ref={chatEndRef}></div>
