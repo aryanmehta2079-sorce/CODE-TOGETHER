@@ -11,9 +11,11 @@ const App = () => {
   const [roomId, setRoomId] = useState("");
   const [userName, setUserName] = useState("");
   const [roomPassword, setRoomPassword] = useState("");
+
   const [language, setLanguage] = useState("javascript");
   const [code, setCode] = useState("// start code from here");
   const [users, setUsers] = useState([]);
+
   const [typing, setTyping] = useState("");
   const [outPut, setOutPut] = useState("");
   const [copySuccess, setCopySuccess] = useState("");
@@ -21,18 +23,25 @@ const App = () => {
   const [permissions, setPermissions] = useState({});
   const [canWrite, setCanWrite] = useState(false);
 
-  const typingTimeout = useRef(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [topic, setTopic] = useState("");
 
-  // ✅ IMPORTANT FIX FLAG
+  const typingTimeout = useRef(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const hasLeftRef = useRef(false);
 
-  /* ===============================
-     SOCKET LISTENERS
-  =============================== */
+  const [chatOpen, setChatOpen] = useState(false);
+  const [roomMessages, setRoomMessages] = useState([]);
+  const [privateMessages, setPrivateMessages] = useState({});
+  const [chatInput, setChatInput] = useState("");
+  const [activeChatUser, setActiveChatUser] = useState(null);
+
+  const chatEndRef = useRef(null);
+
+  /* SOCKET EVENTS */
+
   useEffect(() => {
     socket.on("userJoined", (users) => {
-      // 🔒 BLOCK re-join after leaving
       if (hasLeftRef.current) return;
 
       setUsers(users);
@@ -56,10 +65,27 @@ const App = () => {
       if (typeof newCode === "string") setCode(newCode);
     });
 
+    socket.on("topicUpdate", (newTopic) => {
+      setTopic(newTopic);
+    });
+
     socket.on("userTyping", (user) => {
       setTyping(`${user.slice(0, 8)}... is typing`);
+
       clearTimeout(typingTimeout.current);
+
       typingTimeout.current = setTimeout(() => setTyping(""), 1500);
+    });
+
+    socket.on("receiveRoomMessage", (msg) => {
+      setRoomMessages((prev) => [...prev, msg]);
+    });
+
+    socket.on("receivePrivateMessage", (msg) => {
+      setPrivateMessages((prev) => ({
+        ...prev,
+        [msg.from]: [...(prev[msg.from] || []), msg],
+      }));
     });
 
     socket.on("languageUpdate", setLanguage);
@@ -70,6 +96,7 @@ const App = () => {
         response?.run?.stderr ||
         response?.compile?.stderr ||
         "No output";
+
       setOutPut(output);
     });
 
@@ -89,6 +116,7 @@ const App = () => {
       setPermissions({});
       setCanWrite(false);
       setSidebarOpen(true);
+      setTopic("");
     });
 
     return () => {
@@ -96,44 +124,60 @@ const App = () => {
       socket.off("joinError");
       socket.off("permissionUpdate");
       socket.off("codeUpdate");
+      socket.off("topicUpdate");
       socket.off("userTyping");
+
+      socket.off("receiveRoomMessage"); // ADD
+      socket.off("receivePrivateMessage"); // ADD
+
       socket.off("languageUpdate");
       socket.off("codeResponse");
       socket.off("roomEnded");
     };
   }, [userName]);
 
-  /* ===============================
-     LIVE TIMER
-  =============================== */
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [roomMessages]);
+
+  /* LIVE TIMER */
+
   useEffect(() => {
     const interval = setInterval(() => {
       setUsers((u) => [...u]);
     }, 1000);
+
     return () => clearInterval(interval);
   }, []);
 
   const formatTime = (joinedAt) => {
     const diff = Date.now() - joinedAt;
+
     const m = Math.floor(diff / 60000);
     const s = Math.floor((diff % 60000) / 1000);
+
     return `${m}m ${s}s`;
   };
 
-  /* ===============================
-     ACTIONS
-  =============================== */
+  /* ACTIONS */
+
   const joinRoom = () => {
     if (!roomId || !userName) return;
 
-    hasLeftRef.current = false; // ✅ RESET
-    socket.emit("join", { roomId, userName, password: roomPassword });
+    hasLeftRef.current = false;
+
+    socket.emit("join", {
+      roomId,
+      userName,
+      password: roomPassword,
+    });
   };
 
   const leaveRoom = () => {
-    hasLeftRef.current = true; // ✅ KEY FIX
+    hasLeftRef.current = true;
 
     socket.emit("leaveRoom");
+
     setJoined(false);
     setRoomId("");
     setUserName("");
@@ -144,65 +188,138 @@ const App = () => {
     setUsers([]);
     setPermissions({});
     setCanWrite(false);
+    setTopic("");
+  };
+
+  const handleTopicChange = (e) => {
+    const newTopic = e.target.value;
+
+    setTopic(newTopic);
+
+    socket.emit("topicChange", {
+      roomId,
+      topic: newTopic,
+    });
   };
 
   const endRoomForAll = () => {
     if (!window.confirm("This will end the room for everyone. Continue?"))
       return;
+
     socket.emit("endRoom", { roomId });
   };
 
   const copyRoomId = () => {
     navigator.clipboard.writeText(roomId);
+
     setCopySuccess("Copied!");
+
     setTimeout(() => setCopySuccess(""), 2000);
   };
 
   const handleCodeChange = (newCode = "") => {
     if (!canWrite) return;
+    if (!topic.trim()) {
+      alert("Admin must set coding topic first.");
+      return;
+    }
+
     setCode(newCode);
-    socket.emit("codeChange", { roomId, code: newCode });
-    socket.emit("typing", { roomId, userName });
+
+    socket.emit("codeChange", {
+      roomId,
+      code: newCode,
+    });
+
+    socket.emit("typing", {
+      roomId,
+      userName,
+    });
   };
 
   const handleLanguageChange = (e) => {
     const newLanguage = e.target.value;
+
     setLanguage(newLanguage);
-    socket.emit("languageChange", { roomId, language: newLanguage });
+
+    socket.emit("languageChange", {
+      roomId,
+      language: newLanguage,
+    });
+  };
+
+  const sendRoomMessage = () => {
+    if (!chatInput.trim()) return;
+
+    socket.emit("sendRoomMessage", {
+      roomId,
+      userName,
+      message: chatInput,
+    });
+
+    setChatInput("");
+  };
+
+  const sendPrivateMessage = () => {
+    if (!chatInput.trim()) return;
+
+    socket.emit("sendPrivateMessage", {
+      toUser: activeChatUser,
+      userName,
+      message: chatInput,
+    });
+
+    setChatInput("");
   };
 
   const runCode = () => {
+    if (!topic.trim()) {
+      alert("Admin must set coding topic first.");
+
+      return;
+    }
+
     if (!joined || !code.trim()) return;
+
     setOutPut("⏳ Running...");
-    socket.emit("compileCode", { code, roomId, language });
+
+    socket.emit("compileCode", {
+      code,
+      roomId,
+      language,
+    });
   };
 
   const toggleWritePermission = (targetUser) => {
     socket.emit("setWritePermission", {
       roomId,
-      targetUser,
-      canWrite: !permissions[targetUser]
+      targetUser, // DO NOT lowercase
+      canWrite: !permissions[targetUser],
     });
   };
 
-  /* ===============================
-     PDF EXPORT
-  =============================== */
+  /* PDF EXPORT */
+
   const exportToPDF = () => {
     if (!code.trim()) return;
 
     const pdf = new jsPDF("p", "mm", "a4");
+
     pdf.setFont("Courier", "bold");
     pdf.setFontSize(16);
     pdf.text("CODE-TOGETHER", 10, 15);
 
     pdf.setFont("Courier", "normal");
     pdf.setFontSize(11);
+
     pdf.text(`Room ID: ${roomId}`, 10, 25);
     pdf.text(`Language: ${language}`, 10, 32);
-    pdf.line(10, 36, 200, 36);
+    pdf.text(`Topic: ${topic}`, 10, 39);
 
-    let y = 45;
+    pdf.line(10, 42, 200, 42);
+
+    let y = 50;
+
     const lines = pdf.splitTextToSize(code, 180);
 
     lines.forEach((line) => {
@@ -210,26 +327,50 @@ const App = () => {
         pdf.addPage();
         y = 20;
       }
+
       pdf.text(line, 10, y);
+
       y += 6;
     });
 
     pdf.save(`code-${roomId || "export"}.pdf`);
   };
 
-  /* ===============================
-     UI
-  =============================== */
+  /* JOIN UI */
+
   if (!joined) {
     return (
       <div className="join-container">
-        <div className="join-form">
+        <form
+          className="join-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            joinRoom();
+          }}
+        >
           <h1>Join Code Room</h1>
-          <input placeholder="Room Id" value={roomId} onChange={(e) => setRoomId(e.target.value)} />
-          <input placeholder="Your Name" value={userName} onChange={(e) => setUserName(e.target.value)} />
-          <input type="password" placeholder="Room Password" value={roomPassword} onChange={(e) => setRoomPassword(e.target.value)} />
-          <button onClick={joinRoom}>Join Room</button>
-        </div>
+
+          <input
+            placeholder="Room Id"
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+          />
+
+          <input
+            placeholder="Your Name"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+          />
+
+          <input
+            type="password"
+            placeholder="Room Password"
+            value={roomPassword}
+            onChange={(e) => setRoomPassword(e.target.value)}
+          />
+
+          <button type="submit">Join Room</button>
+        </form>
       </div>
     );
   }
@@ -238,26 +379,36 @@ const App = () => {
 
   return (
     <div className="editor-container">
-      <div className={`sidebar ${sidebarOpen ? "" : "sidebar-hidden"}`}>
+      <div
+        className={`sidebar ${sidebarOpen ? "sidebar-open" : "sidebar-hidden"}`}
+      >
         <div className="room-info">
           <h2>Code Room: {roomId}</h2>
-          <button onClick={copyRoomId} className="copy-btn">Copy Id</button>
+
+          <button onClick={copyRoomId} className="copy-btn">
+            Copy Id
+          </button>
+
           {copySuccess && <span className="copy-success">{copySuccess}</span>}
         </div>
 
         <h3>Users in Room:</h3>
+
         <ul>
           {users.map((user, index) => (
             <li key={index}>
-              {user.name.slice(0, 8)}... {index === 0 && " 👑"}
+              {user.name.slice(0, 8)}...
+              {index === 0 && " 👑"}
               <br />
               <small>⏱ {formatTime(user.joinedAt)}</small>
               <br />
               <small>{permissions[user.name] ? "✏️ Write" : "👀 Read"}</small>
-
               {userName === adminName && user.name !== adminName && (
                 <div>
-                  <button style={{ marginTop: "4px" }} onClick={() => toggleWritePermission(user.name)}>
+                  <button
+                    style={{ marginTop: "4px" }}
+                    onClick={() => toggleWritePermission(user.name)}
+                  >
                     {permissions[user.name] ? "Revoke Write" : "Allow Write"}
                   </button>
                 </div>
@@ -268,37 +419,103 @@ const App = () => {
 
         <p className="typing-indicator">{typing}</p>
 
-        <select className="language-selector" value={language} onChange={handleLanguageChange}>
+        <select
+          className="language-selector"
+          value={language}
+          onChange={handleLanguageChange}
+        >
           <option value="javascript">JavaScript</option>
+
           <option value="python">Python</option>
+
           <option value="java">Java</option>
+
           <option value="cpp">C++</option>
         </select>
 
-        <button className="leave-btn" onClick={leaveRoom}>Leave Room</button>
+        <button className="leave-btn" onClick={leaveRoom}>
+          Leave Room
+        </button>
       </div>
 
       <div className="editor-wrapper">
+        <div className="topic-header">
+          <div className="header-left">
+            {/* <h3>Code Room: {roomId}</h3> */}
+          </div>
+
+          <div className="header-center">
+            {userName === adminName ? (
+              <>
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={handleTopicChange}
+                  placeholder="Enter Coding Topic..."
+                  className="topic-input"
+                />
+
+                {!topic && (
+                  <div className="topic-warning">
+                    ⚠ Please enter a topic before writing code
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="topic-title">
+                Coding Topic: {topic || "Waiting for admin..."}
+              </div>
+            )}
+          </div>
+
+          <div className="header-right">
+            <button className="chat-btn" onClick={() => setChatOpen(!chatOpen)}>
+              💬 Chat
+            </button>
+
+            <button
+              className="menu-btn"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              ☰ More
+            </button>
+          </div>
+        </div>
+
         <Editor
           height="65%"
           language={language}
           value={code}
           onChange={handleCodeChange}
           theme="vs-dark"
-          options={{ minimap: { enabled: false }, fontSize: 14, readOnly: !canWrite }}
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            readOnly: !canWrite || (userName !== adminName && !topic),
+          }}
         />
 
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button className="run-btn" onClick={runCode}>Execute</button>
-          <button className="run-btn" onClick={() => setSidebarOpen(p => !p)}>
-            {sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+          }}
+        >
+          <button className="run-btn" onClick={runCode}>
+            Execute
           </button>
-          <button className="run-btn" onClick={exportToPDF}>Export PDF</button>
+
+          <button className="run-btn" onClick={exportToPDF}>
+            Export PDF
+          </button>
 
           {userName === adminName && (
             <button
               className="run-btn"
-              style={{ backgroundColor: "#e74c3c", color: "white" }}
+              style={{
+                backgroundColor: "#e74c3c",
+                color: "white",
+              }}
               onClick={endRoomForAll}
             >
               End Room
@@ -313,6 +530,41 @@ const App = () => {
           placeholder="// Output will appear here"
         />
       </div>
+      {/* CHAT PANEL */}
+      {chatOpen && (
+        <div className="chat-panel">
+          <div className="chat-header">Room Chat</div>
+
+          <div className="chat-messages">
+            {roomMessages.map((m, i) => (
+              <div
+                key={i}
+                className={`chat-message ${
+                  m.userName === userName ? "my-message" : ""
+                }`}
+              >
+                <div className="chat-user">{m.userName}</div>
+                <div className="chat-bubble">{m.message}</div>
+                <div className="chat-time">{m.time}</div>
+              </div>
+            ))}
+            <div ref={chatEndRef}></div>
+          </div>
+
+          <div className="chat-input-area">
+            <input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Type message..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") sendRoomMessage();
+              }}
+            />
+
+            <button onClick={sendRoomMessage}>Send</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

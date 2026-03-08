@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config({ path: "./backend/.env" });
+
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -9,14 +12,8 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: { origin: "*" },
 });
-
-/* ===============================
-   Keep-alive
-================================ */
-// const url = "https://code-together-b401.onrender.com";
-// setInterval(() => axios.get(url).catch(() => {}), 30000);
 
 /* ===============================
    Utils
@@ -35,34 +32,17 @@ const socketUser = new Map();
 /* ===============================
    Compiler Config
 ================================ */
-const LANGUAGE_VERSIONS = {
-  javascript: "18.15.0",
-  python: "3.10.0",
-  java: "15.0.2",
-  cpp: "10.2.0"
-};
 
 const JDOODLE_LANG_MAP = {
   javascript: { language: "nodejs", versionIndex: "4" },
   python: { language: "python3", versionIndex: "4" },
   java: { language: "java", versionIndex: "4" },
-  cpp: { language: "cpp17", versionIndex: "1" }
+  cpp: { language: "cpp17", versionIndex: "1" },
 };
 
 /* ===============================
    Compiler Helpers
 ================================ */
-async function runWithPiston(code, language) {
-  return axios.post(
-    "https://emkc.org/api/v2/piston/execute",
-    {
-      language,
-      version: LANGUAGE_VERSIONS[language] || "*",
-      files: [{ content: code }]
-    },
-    { timeout: 5000 }
-  );
-}
 
 async function runWithJDoodle(code, language) {
   const map = JDOODLE_LANG_MAP[language];
@@ -75,26 +55,16 @@ async function runWithJDoodle(code, language) {
       clientSecret: process.env.JDOODLE_SECRET,
       script: code,
       language: map.language,
-      versionIndex: map.versionIndex
+      versionIndex: map.versionIndex,
     },
-    { timeout: 5000 }
+    { timeout: 10000 },
   );
-}
-
-async function executeWithFallback(code, language) {
-  try {
-    return await runWithPiston(code, language);
-  } catch {
-    console.warn("⚠️ Piston failed, switching to JDoodle");
-    return await runWithJDoodle(code, language);
-  }
 }
 
 /* ===============================
    Socket Logic
 ================================ */
 io.on("connection", (socket) => {
-
   /* -------- JOIN ROOM -------- */
   socket.on("join", ({ roomId, userName, password }) => {
     if (!roomId || !userName) return;
@@ -104,7 +74,8 @@ io.on("connection", (socket) => {
         users: new Map(),
         code: "// start coding from here",
         language: "javascript",
-        password: null
+        topic: "",
+        password: null,
       });
       writePermissions.set(roomId, new Map());
     }
@@ -129,7 +100,7 @@ io.on("connection", (socket) => {
 
     room.users.set(normalizedName, {
       name: userName,
-      joinedAt: Date.now()
+      joinedAt: Date.now(),
     });
 
     if (perms.size === 0) perms.set(normalizedName, true);
@@ -140,6 +111,7 @@ io.on("connection", (socket) => {
 
     socket.emit("codeUpdate", room.code);
     socket.emit("languageUpdate", room.language);
+    socket.emit("topicUpdate", room.topic);
   });
 
   /* -------- CODE CHANGE -------- */
@@ -166,25 +138,47 @@ io.on("connection", (socket) => {
     const perms = writePermissions.get(roomId);
     if (!room || !perms) return;
 
-    const admin = Array.from(perms.entries()).find(([, v]) => v === true)?.[0];
+    const admin = Array.from(perms.keys())[0];
     if (user.normalizedName !== admin) return;
 
-    const targetNormalized = [...room.users.entries()]
-      .find(([, u]) => u.name === targetUser)?.[0];
+    const targetNormalized = [...room.users.entries()].find(
+      ([, u]) => u.name === targetUser,
+    )?.[0];
 
     if (!targetNormalized) return;
 
     perms.set(targetNormalized, canWrite);
 
-    io.to(roomId).emit(
-      "permissionUpdate",
-      serializePermissions(room, perms)
-    );
+    io.to(roomId).emit("permissionUpdate", serializePermissions(room, perms));
   });
 
   /* -------- TYPING -------- */
   socket.on("typing", ({ roomId, userName }) => {
     socket.to(roomId).emit("userTyping", userName);
+  });
+
+  /* -------- MESSAGING -------- */
+  socket.on("sendRoomMessage", ({ roomId, userName, message }) => {
+    io.to(roomId).emit("receiveRoomMessage", {
+      userName,
+      message,
+      time: new Date().toLocaleTimeString(),
+    });
+  });
+  socket.on("sendPrivateMessage", ({ toUser, userName, message }) => {
+    const target = [...socketUser.entries()].find(
+      ([, v]) => v.normalizedName === toUser.toLowerCase(),
+    );
+
+    if (!target) return;
+
+    const targetSocket = target[0];
+
+    io.to(targetSocket).emit("receivePrivateMessage", {
+      from: userName,
+      message,
+      time: new Date().toLocaleTimeString(),
+    });
   });
 
   /* -------- LANGUAGE -------- */
@@ -196,22 +190,33 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("languageUpdate", language);
   });
 
+  /* -------- TOPIC CHANGE -------- */
+  socket.on("topicChange", ({ roomId, topic }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    room.topic = topic;
+
+    io.to(roomId).emit("topicUpdate", topic);
+  });
+
   /* -------- COMPILE -------- */
   socket.on("compileCode", async ({ code, roomId, language }) => {
     try {
-      const response = await executeWithFallback(code, language);
+      const response = await runWithJDoodle(code, language);
       const data = response.data;
 
-      if (data.output !== undefined) {
-        io.to(roomId).emit("codeResponse", {
-          run: { stdout: data.output }
-        });
-      } else {
-        io.to(roomId).emit("codeResponse", data);
-      }
-    } catch {
       io.to(roomId).emit("codeResponse", {
-        run: { stderr: "❌ All compilers are currently unavailable." }
+        run: {
+          stdout: data.output || "",
+          stderr: data.error || "",
+        },
+      });
+    } catch (err) {
+      console.error("Compiler error:", err.message);
+
+      io.to(roomId).emit("codeResponse", {
+        run: { stderr: "❌ Compiler error." },
       });
     }
   });
@@ -301,10 +306,10 @@ function getOldestUser(usersMap) {
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(rootDir, "frontend", "dist")));
   app.get("/", (_req, res) =>
-    res.sendFile(path.join(rootDir, "frontend", "dist", "index.html"))
+    res.sendFile(path.join(rootDir, "frontend", "dist", "index.html")),
   );
 }
 
 server.listen(process.env.PORT || 5000, () =>
-  console.log("Server running on port 5000")
+  console.log("Server running on port 5000"),
 );
