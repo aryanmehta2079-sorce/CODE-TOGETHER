@@ -18,6 +18,7 @@ const App = () => {
 
   const [typing, setTyping] = useState("");
   const [outPut, setOutPut] = useState("");
+  const [showOutput, setShowOutput] = useState(false);
   const [copySuccess, setCopySuccess] = useState("");
 
   const [permissions, setPermissions] = useState({});
@@ -35,6 +36,9 @@ const App = () => {
   const [chatInput, setChatInput] = useState("");
 
   const chatEndRef = useRef(null);
+  const closeConsole = () => {
+    setShowOutput(false);
+  };
 
   /* SOCKET EVENTS */
 
@@ -44,6 +48,7 @@ const App = () => {
 
       setUsers(users);
       setJoined(true);
+      setShowOutput(false);
 
       const admin = users[0]?.name;
       if (userName === admin) setCanWrite(true);
@@ -186,6 +191,7 @@ const App = () => {
     setPermissions({});
     setCanWrite(false);
     setTopic("");
+    setShowOutput(false);
   };
 
   const handleTopicChange = (e) => {
@@ -257,7 +263,6 @@ const App = () => {
     setChatInput("");
   };
 
-
   const runCode = () => {
     if (!topic.trim()) {
       alert("Admin must set coding topic first.");
@@ -266,6 +271,7 @@ const App = () => {
     }
 
     if (!joined || !code.trim()) return;
+    setShowOutput(true);
 
     setOutPut("⏳ Running...");
 
@@ -419,6 +425,24 @@ const App = () => {
           <option value="cpp">C++</option>
         </select>
 
+        <button className="run-btn" onClick={exportToPDF}>
+          Export PDF
+        </button>
+
+        {userName === adminName && (
+          <button
+            className="run-btn"
+            style={{
+              backgroundColor: "#e74c3c",
+              color: "white",
+              marginTop: "8px",
+            }}
+            onClick={endRoomForAll}
+          >
+            End Room
+          </button>
+        )}
+
         <button className="leave-btn" onClick={leaveRoom}>
           Leave Room
         </button>
@@ -455,6 +479,10 @@ const App = () => {
           </div>
 
           <div className="header-right">
+            <button className="chat-btn" onClick={runCode}>
+              Execute
+            </button>
+
             <button className="chat-btn" onClick={() => setChatOpen(!chatOpen)}>
               💬 Chat
             </button>
@@ -469,7 +497,7 @@ const App = () => {
         </div>
 
         <Editor
-          height="65%"
+          height={showOutput ? "65%" : "100%"}
           language={language}
           value={code}
           onChange={handleCodeChange}
@@ -481,40 +509,14 @@ const App = () => {
           }}
         />
 
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-          }}
-        >
-          <button className="run-btn" onClick={runCode}>
-            Execute
-          </button>
-
-          <button className="run-btn" onClick={exportToPDF}>
-            Export PDF
-          </button>
-
-          {userName === adminName && (
-            <button
-              className="run-btn"
-              style={{
-                backgroundColor: "#e74c3c",
-                color: "white",
-              }}
-              onClick={endRoomForAll}
-            >
-              End Room
+        {showOutput && (
+          <div className="console-container">
+            <button className="console-close" onClick={closeConsole}>
+              ✖
             </button>
-          )}
-        </div>
-
-        <textarea
-          className="output-console"
-          value={outPut}
-          readOnly
-          placeholder="// Output will appear here"
-        />
+            <textarea className="output-console" value={outPut} readOnly />
+          </div>
+        )}
       </div>
       {/* CHAT PANEL */}
       {chatOpen && (

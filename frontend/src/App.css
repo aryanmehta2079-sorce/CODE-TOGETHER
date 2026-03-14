@@ -182,7 +182,7 @@ body{
 
 .editor-wrapper{
   flex-grow:1;
-  background:#dee28c;
+  background:#eaeaea;
   display:flex;
   flex-direction:column;
   overflow:hidden;
@@ -276,7 +276,7 @@ body{
 ================================ */
 
 .output-console{
-  background:#dee28c;
+  background:transparent;
   width:100%;
   padding:10px;
   font-size:20px;
@@ -416,4 +416,30 @@ body{
 
 .my-message .chat-bubble{
   background:#27ae60;
+}
+.topic-warning{
+  color: #ff9800;
+}
+
+.console-container{
+  position:relative;
+  width:100%;
+  height:35%;
+}
+
+.console-close{
+  position:absolute;
+  top:5px;
+  right:10px;
+  background:#e74c3c;
+  color:white;
+  border:none;
+  padding:4px 8px;
+  cursor:pointer;
+  border-radius:4px;
+  font-size:12px;
+}
+
+.console-close:hover{
+  background:#c0392b;
 }
