@@ -15,6 +15,7 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
+
 /* ===============================
    Utils
 ================================ */
@@ -72,7 +73,7 @@ io.on("connection", (socket) => {
     if (!rooms.has(roomId)) {
       rooms.set(roomId, {
         users: new Map(),
-        code: "// start coding from here",
+        code: "",
         language: "javascript",
         topic: "",
         password: null,

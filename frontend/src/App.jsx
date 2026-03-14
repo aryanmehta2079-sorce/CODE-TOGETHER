@@ -5,6 +5,7 @@ import Editor from "@monaco-editor/react";
 import jsPDF from "jspdf";
 
 const socket = io("https://code-together-b401.onrender.com");
+// const socket = io("http://localhost:5000");
 
 const App = () => {
   const [joined, setJoined] = useState(false);
@@ -13,7 +14,7 @@ const App = () => {
   const [roomPassword, setRoomPassword] = useState("");
 
   const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState("// start code from here");
+  const [code, setCode] = useState("");
   const [users, setUsers] = useState([]);
 
   const [typing, setTyping] = useState("");
@@ -49,6 +50,7 @@ const App = () => {
       setUsers(users);
       setJoined(true);
       setShowOutput(false);
+      setCode("");
 
       const admin = users[0]?.name;
       if (userName === admin) setCanWrite(true);
@@ -111,7 +113,7 @@ const App = () => {
       setRoomId("");
       setUserName("");
       setRoomPassword("");
-      setCode("// start coding from here");
+      setCode("");
       setLanguage("javascript");
       setOutPut("");
       setUsers([]);
@@ -184,7 +186,7 @@ const App = () => {
     setRoomId("");
     setUserName("");
     setRoomPassword("");
-    setCode("// start coding from here");
+    setCode("");
     setLanguage("javascript");
     setOutPut("");
     setUsers([]);
@@ -496,18 +498,25 @@ const App = () => {
           </div>
         </div>
 
-        <Editor
-          height={showOutput ? "65%" : "100%"}
-          language={language}
-          value={code}
-          onChange={handleCodeChange}
-          theme="vs-dark"
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            readOnly: !canWrite || (userName !== adminName && !topic),
-          }}
-        />
+        <div className="editor-area">
+          {code === "" && (
+            <div className="editor-placeholder">Start typing your code...</div>
+          )}
+
+          <Editor
+            key={roomId}
+            height={showOutput ? "65%" : "100%"}
+            language={language}
+            value={code}
+            onChange={handleCodeChange}
+            theme="vs-dark"
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              readOnly: !canWrite || (userName !== adminName && !topic),
+            }}
+          />
+        </div>
 
         {showOutput && (
           <div className="console-container">

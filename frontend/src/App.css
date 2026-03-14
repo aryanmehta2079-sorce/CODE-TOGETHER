@@ -443,3 +443,20 @@ body{
 .console-close:hover{
   background:#c0392b;
 }
+
+.editor-area{
+  position:relative;
+  height:100%;
+}
+
+.editor-placeholder{
+  position:absolute;
+  top:5px;   /* moved up slightly */
+  left:70px;
+  color:#6b7280;
+  font-size:14px;
+  pointer-events:none;
+  z-index:5;
+  font-family:monospace;
+  opacity:0.6;
+}
