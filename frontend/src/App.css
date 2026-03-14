@@ -182,11 +182,13 @@ body{
 
 .editor-wrapper{
   flex-grow:1;
-  background:#eaeaea;
+  background:#1e1e1e;
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  height:100%;
 }
+
 
 /* ===============================
    HEADER
@@ -276,14 +278,16 @@ body{
 ================================ */
 
 .output-console{
-  background:transparent;
   width:100%;
   height:100%;
+  background:white;
+  color:black;
   padding:10px;
-  font-size:16px;
+  font-size:14px;
   resize:none;
   border:none;
   overflow:auto;
+  font-family:monospace;
 }
 
 /* CHAT PANEL */
@@ -425,7 +429,10 @@ body{
   position:relative;
   width:100%;
   height:35%;
+  background:white;   /* add this */
 }
+
+
 
 .console-close{
   position:absolute;

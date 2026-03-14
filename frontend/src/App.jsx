@@ -50,7 +50,6 @@ const App = () => {
       setUsers(users);
       setJoined(true);
       setShowOutput(false);
-      setCode("");
 
       const admin = users[0]?.name;
       if (userName === admin) setCanWrite(true);
@@ -505,7 +504,7 @@ const App = () => {
 
           <Editor
             key={roomId}
-            height={showOutput ? "65%" : "100%"}
+            height={showOutput ? "65vh" : "100%"}
             language={language}
             value={code}
             onChange={handleCodeChange}

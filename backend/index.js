@@ -127,7 +127,8 @@ io.on("connection", (socket) => {
     if (!room) return;
 
     room.code = code;
-    socket.to(roomId).emit("codeUpdate", code);
+    io.to(roomId).emit("codeUpdate", code);
+
   });
 
   /* -------- WRITE PERMISSION (FIXED) -------- */
