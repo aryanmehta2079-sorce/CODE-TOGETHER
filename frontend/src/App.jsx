@@ -329,6 +329,43 @@ const App = () => {
     pdf.save(`code-${roomId || "export"}.pdf`);
   };
 
+  // LOG OF CONNECTED USER
+
+  const exportUserLogPDF = () => {
+    if (!users.length) return;
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    pdf.setFont("Courier", "bold");
+    pdf.setFontSize(16);
+    pdf.text("CODE ROOM USER LOG", 10, 15);
+
+    pdf.setFont("Courier", "normal");
+    pdf.setFontSize(11);
+
+    pdf.text(`Room ID: ${roomId}`, 10, 25);
+    pdf.text(`Topic: ${topic || "N/A"}`, 10, 32);
+
+    pdf.line(10, 38, 200, 38);
+
+    let y = 48;
+
+    users.forEach((user, index) => {
+      const joinTime = new Date(user.joinedAt).toLocaleTimeString();
+
+      pdf.text(`${index + 1}. ${user.name}  |  Joined at: ${joinTime}`, 10, y);
+
+      y += 8;
+
+      if (y > 280) {
+        pdf.addPage();
+        y = 20;
+      }
+    });
+
+    pdf.save(`user-log-${roomId}.pdf`);
+  };
+
   /* JOIN UI */
 
   if (!joined) {
@@ -425,28 +462,27 @@ const App = () => {
 
           <option value="cpp">C++</option>
         </select>
-
-        <button className="run-btn" onClick={exportToPDF}>
-          Export PDF
-        </button>
-
-        {userName === adminName && (
-          <button
-            className="run-btn"
-            style={{
-              backgroundColor: "#e74c3c",
-              color: "white",
-              marginTop: "8px",
-            }}
-            onClick={endRoomForAll}
-          >
-            End Room
+        <div className="sidebar-buttons">
+          <button className="run-btn" onClick={exportToPDF}>
+            Export PDF
           </button>
-        )}
 
+          {userName === adminName && (
+            <>
+              <button className="end-room-btn" onClick={endRoomForAll}>
+                End Room
+              </button>
+
+              <button className="log-btn" onClick={exportUserLogPDF}>
+                Download User Log
+              </button>
+            </>
+          )}
         <button className="leave-btn" onClick={leaveRoom}>
           Leave Room
         </button>
+        </div>
+
       </div>
 
       <div className="editor-wrapper">

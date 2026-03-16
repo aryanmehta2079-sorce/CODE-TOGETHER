@@ -47,7 +47,6 @@ body{
   margin-bottom:1rem;
   border:1px solid #ddd;
   border-radius:4px;
-  font-size:1rem;
 }
 
 .join-form button{
@@ -57,9 +56,7 @@ body{
   color:white;
   border:none;
   border-radius:4px;
-  font-size:1rem;
   cursor:pointer;
-  transition:background-color 0.3s ease;
 }
 
 .join-form button:hover{
@@ -73,22 +70,23 @@ body{
 .editor-container{
   display:flex;
   height:100vh;
-  overflow:hidden;
 }
 
 /* ===============================
-   SIDEBAR (MORE OPTIONS PANEL)
+   SIDEBAR
 ================================ */
 
 .sidebar{
   position:absolute;
   top:60px;
-  right:10px;   /* changed from left */
+  right:10px;
   width:260px;
+  max-height:80vh;
+  overflow-y:auto;
+
   background:#2c3e50;
   padding:20px;
   border-radius:8px;
-  transition:0.3s;
   color:#ecf0f1;
   z-index:100;
 }
@@ -101,8 +99,6 @@ body{
   display:block;
 }
 
-/* sidebar elements */
-
 .room-info{
   display:flex;
   flex-direction:column;
@@ -111,7 +107,7 @@ body{
 }
 
 .copy-btn{
-  padding:0.5rem 1rem;
+  padding:6px 12px;
   background:#3498db;
   color:white;
   border:none;
@@ -124,52 +120,87 @@ body{
 }
 
 .copy-success{
-  margin-top:10px;
-  color:rgb(22,219,22);
-  font-size:0.8rem;
+  margin-top:8px;
+  color:#16db16;
+  font-size:12px;
 }
 
 .sidebar h3{
-  margin-top:1rem;
-  margin-bottom:0.5rem;
+  margin:10px 0 6px;
 }
+
+/* user list */
 
 .sidebar ul{
   list-style:none;
+  max-height:200px;
+  overflow-y:auto;
 }
 
 .sidebar ul li{
-  padding:0.5rem;
-  font-size:0.9rem;
-  background:gray;
+  padding:8px;
+  background:#7f8c8d;
   margin-top:5px;
-  border-radius:5px;
+  border-radius:6px;
+  font-size:13px;
 }
+
+/* typing */
 
 .typing-indicator{
-  margin-top:1rem;
-  font-size:1rem;
+  margin-top:8px;
+  font-size:13px;
 }
 
+/* language selector */
+
 .language-selector{
-  margin-top:1rem;
+  margin-top:10px;
   width:100%;
-  padding:0.5rem;
+  padding:6px;
   background:#34495e;
   color:white;
   border:none;
   border-radius:4px;
 }
 
+/* ===============================
+   SIDEBAR BUTTONS
+================================ */
+
+.sidebar-buttons{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:15px;
+}
+
+.run-btn,
+.end-room-btn,
+.log-btn,
 .leave-btn{
-  margin-top:1rem;
   width:100%;
-  padding:0.75rem;
-  background:#e74c3c;
-  color:white;
+  padding:10px;
   border:none;
   border-radius:4px;
+  color:white;
   cursor:pointer;
+}
+
+.run-btn{
+  background:#12be46;
+}
+
+.end-room-btn{
+  background:#e74c3c;
+}
+
+.log-btn{
+  background:#16a085;
+}
+
+.leave-btn{
+  background:#e74c3c;
 }
 
 .leave-btn:hover{
@@ -185,10 +216,7 @@ body{
   background:#1e1e1e;
   display:flex;
   flex-direction:column;
-  overflow:hidden;
-  height:100%;
 }
-
 
 /* ===============================
    HEADER
@@ -199,13 +227,12 @@ body{
   align-items:center;
   justify-content:space-between;
   background:#2c3e50;
-  padding:6px;
+  padding:6px 10px;
 }
 
 .header-left{
-  color:white;
-  font-weight:600;
   width:200px;
+  color:white;
 }
 
 .header-center{
@@ -215,82 +242,113 @@ body{
 
 .header-right{
   display:flex;
-  justify-content:flex-end;
-  align-items:center;
   gap:8px;
-  width:auto;
 }
 
-/* ===============================
-   TOPIC INPUT
-================================ */
+/* topic input */
 
 .topic-input{
   width:100%;
-  max-width:800px;
+  max-width:700px;
   padding:6px;
-  font-size:16px;
   background:#1f2933;
-  color:rgb(255,230,0);
+  color:yellow;
   border:1px solid #555;
   border-radius:4px;
 }
 
-.topic-input::placeholder{
-  color:#bbb;
-}
-
 .topic-title{
-  font-weight:600;
   color:white;
+  font-weight:600;
 }
 
-/* ===============================
-   MENU BUTTON
-================================ */
+.topic-warning{
+  color:#ff9800;
+  font-size:12px;
+}
+
+/* buttons */
+
+.menu-btn,
+.chat-btn{
+  border:none;
+  color:white;
+  padding:6px 12px;
+  border-radius:4px;
+  cursor:pointer;
+}
 
 .menu-btn{
   background:#3498db;
-  border:none;
+}
+
+.chat-btn{
+  background:#27ae60;
+}
+
+.chat-btn:hover{
+  background:#219150;
+}
+
+/* ===============================
+   EDITOR
+================================ */
+
+.editor-area{
+  position:relative;
+  height:100%;
+}
+
+.editor-placeholder{
+  position:absolute;
+  top:5px;
+  left:70px;
+  color:#6b7280;
+  font-size:14px;
+  pointer-events:none;
+  font-family:monospace;
+  opacity:0.6;
+}
+
+/* ===============================
+   CONSOLE
+================================ */
+
+.console-container{
+  position:relative;
+  width:100%;
+  height:35%;
+  background:white;
+}
+
+.console-close{
+  position:absolute;
+  top:5px;
+  right:10px;
+  background:#e74c3c;
   color:white;
-  padding:6px 10px;
-  cursor:pointer;
-  border-radius:4px;
-}
-
-.menu-btn:hover{
-  background:#2980b9;
-}
-
-/* ===============================
-   BUTTONS
-================================ */
-
-.run-btn{
-  background:#12be46;
-  padding:10px;
   border:none;
+  padding:4px 8px;
+  border-radius:4px;
   cursor:pointer;
 }
 
-/* ===============================
-   OUTPUT CONSOLE
-================================ */
+.console-close:hover{
+  background:#c0392b;
+}
 
 .output-console{
   width:100%;
   height:100%;
-  background:white;
-  color:black;
   padding:10px;
-  font-size:14px;
+  font-family:monospace;
   resize:none;
   border:none;
-  overflow:auto;
-  font-family:monospace;
 }
 
-/* CHAT PANEL */
+/* ===============================
+   CHAT PANEL
+================================ */
 
 .chat-panel{
   position:absolute;
@@ -302,7 +360,6 @@ body{
   border-left:2px solid #333;
   display:flex;
   flex-direction:column;
-  z-index:50;
 }
 
 .chat-header{
@@ -321,65 +378,21 @@ body{
 
 .chat-input-area{
   display:flex;
-  padding:10px;
   gap:5px;
+  padding:10px;
 }
 
 .chat-input-area input{
   flex:1;
-  padding:5px;
+  padding:6px;
 }
 
 .chat-input-area button{
-  padding:5px 10px;
   background:#3498db;
-  border:none;
-  color:white;
-}
-
-.chat-btn{
-  background:#27ae60;
   border:none;
   color:white;
   padding:6px 10px;
-  margin-right:8px;
-  border-radius:4px;
-  cursor:pointer;
 }
-.chat-panel{
-  position:absolute;
-  right:0;
-  top:60px;
-  width:300px;
-  height:calc(100% - 60px);
-  background:#1e1e1e;
-  border-left:2px solid #333;
-  display:flex;
-  flex-direction:column;
-}
-.chat-btn{
-  background:#27ae60;
-  border:none;
-  color:white;
-  padding:6px 12px;
-  border-radius:4px;
-  cursor:pointer;
-}
-
-.chat-btn:hover{
-  background:#219150;
-}
-
-.menu-btn{
-  background:#3498db;
-  border:none;
-  color:white;
-  padding:6px 12px;
-  border-radius:4px;
-  cursor:pointer;
-}
-
-/* CHAT MESSAGE */
 
 .chat-message{
   margin-bottom:12px;
@@ -387,83 +400,28 @@ body{
   flex-direction:column;
 }
 
-/* username */
-
 .chat-user{
   font-size:12px;
   color:#4fc3f7;
-  margin-bottom:3px;
 }
-
-/* message bubble */
 
 .chat-bubble{
   background:#2f3640;
-  color:white;
   padding:8px 12px;
   border-radius:12px;
   max-width:80%;
   word-wrap:break-word;
-  box-shadow:0 2px 5px rgba(0,0,0,0.4);
 }
-
-/* time */
 
 .chat-time{
   font-size:10px;
   opacity:0.6;
-  margin-top:3px;
 }
+
 .my-message{
   align-items:flex-end;
 }
 
 .my-message .chat-bubble{
   background:#27ae60;
-}
-.topic-warning{
-  color: #ff9800;
-}
-
-.console-container{
-  position:relative;
-  width:100%;
-  height:35%;
-  background:white;   /* add this */
-}
-
-
-
-.console-close{
-  position:absolute;
-  top:5px;
-  right:10px;
-  background:#e74c3c;
-  color:white;
-  border:none;
-  padding:4px 8px;
-  cursor:pointer;
-  border-radius:4px;
-  font-size:12px;
-}
-
-.console-close:hover{
-  background:#c0392b;
-}
-
-.editor-area{
-  position:relative;
-  height:100%;
-}
-
-.editor-placeholder{
-  position:absolute;
-  top:5px;   /* moved up slightly */
-  left:70px;
-  color:#6b7280;
-  font-size:14px;
-  pointer-events:none;
-  z-index:5;
-  font-family:monospace;
-  opacity:0.6;
 }
