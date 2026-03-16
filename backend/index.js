@@ -117,19 +117,19 @@ io.on("connection", (socket) => {
 
   /* -------- CODE CHANGE -------- */
   socket.on("codeChange", ({ roomId, code }) => {
-    const user = socketUser.get(socket.id);
-    if (!user) return;
+  const user = socketUser.get(socket.id);
+  if (!user) return;
 
-    const perms = writePermissions.get(roomId);
-    if (!perms?.get(user.normalizedName)) return;
+  const perms = writePermissions.get(roomId);
+  if (!perms?.get(user.normalizedName)) return;
 
-    const room = rooms.get(roomId);
-    if (!room) return;
+  const room = rooms.get(roomId);
+  if (!room) return;
 
-    room.code = code;
-    io.to(roomId).emit("codeUpdate", code);
+  room.code = code;
 
-  });
+  socket.to(roomId).emit("codeUpdate", code);
+});
 
   /* -------- WRITE PERMISSION (FIXED) -------- */
   socket.on("setWritePermission", ({ roomId, targetUser, canWrite }) => {
@@ -179,13 +179,13 @@ io.on("connection", (socket) => {
 
   /* -------- TOPIC CHANGE -------- */
   socket.on("topicChange", ({ roomId, topic }) => {
-    const room = rooms.get(roomId);
-    if (!room) return;
+  const room = rooms.get(roomId);
+  if (!room) return;
 
-    room.topic = topic;
+  room.topic = topic;
 
-    io.to(roomId).emit("topicUpdate", topic);
-  });
+  socket.to(roomId).emit("topicUpdate", topic);
+});
 
   /* -------- COMPILE -------- */
   socket.on("compileCode", async ({ code, roomId, language }) => {
