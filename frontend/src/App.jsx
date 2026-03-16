@@ -4,8 +4,8 @@ import { io } from "socket.io-client";
 import Editor from "@monaco-editor/react";
 import jsPDF from "jspdf";
 
-const socket = io("https://code-together-b401.onrender.com");
-// const socket = io("http://localhost:5000");
+// const socket = io("https://code-together-b401.onrender.com");
+const socket = io("http://localhost:5000");
 
 const App = () => {
   const [joined, setJoined] = useState(false);
@@ -534,7 +534,7 @@ const App = () => {
         </div>
 
         <div className="editor-area">
-          {code === "" && (
+          {!code && (
             <div className="editor-placeholder">Start typing your code...</div>
           )}
 
