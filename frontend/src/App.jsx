@@ -513,6 +513,10 @@ const App = () => {
               minimap: { enabled: false },
               fontSize: 14,
               readOnly: !canWrite || (userName !== adminName && !topic),
+
+              smoothScrolling: true,
+              cursorSmoothCaretAnimation: "on",
+              automaticLayout: true,
             }}
           />
         </div>
